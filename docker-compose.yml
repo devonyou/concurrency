@@ -1,0 +1,58 @@
+services:
+    app:
+        build:
+            context: .
+            dockerfile: ./Dockerfile
+            target: development
+        command: npm run start:dev
+        ports:
+            - '${HTTP_PORT}:3000'
+        volumes:
+            - .:/usr/src/app
+            - /usr/src/app/node_modules
+        env_file:
+            - ./.env
+
+    mysql:
+        image: mysql:5.7
+        platform: linux/amd64
+        ports:
+            - '${MYSQL_PORT}:3306'
+        volumes:
+            - ./mysql/data:/var/lib/mysql
+            - ./mysql/my.cnf:/etc/mysql/my.cnf
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'mysqladmin',
+                    'ping',
+                    '-h',
+                    'mysql',
+                    '-u',
+                    'root',
+                    '-p${MYSQL_PASSWORD}',
+                ]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+            start_period: 5s
+        env_file:
+            - ./.env
+        environment:
+            TZ: Asia/Seoul
+            MYSQL_PASSWORD: '${MYSQL_PASSWORD}'
+            MYSQL_DATABASE: '${MYSQL_DATABASE}'
+            MYSQL_ROOT_PASSWORD: '${MYSQL_PASSWORD}'
+    redis:
+        image: redis:7-alpine
+        ports:
+            - '${REDIS_PORT}:6379'
+        volumes:
+            - ./redis/data:/data
+            - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+        restart: always
+        command: redis-server --appendonly yes
+        environment:
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+            - REDIS_USERNAME=${REDIS_USERNAME}
