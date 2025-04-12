@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ShowModule } from './show/show.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -11,12 +9,15 @@ import { BullModule } from '@nestjs/bullmq';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { ExpressAdapter } from '@bull-board/express';
 import { WorkerModule } from './worker/worker.module';
+import { RedisModule } from '@liaoliaots/nestjs-redis';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
         }),
+
         TypeOrmModule.forRootAsync({
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => ({
@@ -28,13 +29,23 @@ import { WorkerModule } from './worker/worker.module';
                 entities: [ShowEntity, ReservationEntity],
             }),
         }),
+
+        RedisModule.forRootAsync({
+            imports: [ConfigModule],
+            useFactory: (configService: ConfigService) => ({
+                config: {
+                    host: configService.get<string>('REDIS_HOST'),
+                    port: +configService.get<number>('REDIS_PORT'),
+                },
+            }),
+            inject: [ConfigService],
+        }),
+
         BullModule.forRootAsync({
             useFactory: (configService: ConfigService) => ({
                 connection: {
                     host: configService.get<string>('REDIS_HOST'),
-                    port: configService.get<number>('REDIS_PORT'),
-                    username: configService.get<string>('REDIS_USERNAME'),
-                    password: configService.get<string>('REDIS_PASSWORD'),
+                    port: +configService.get<number>('REDIS_PORT'),
                 },
             }),
             inject: [ConfigService],
@@ -45,11 +56,32 @@ import { WorkerModule } from './worker/worker.module';
             adapter: ExpressAdapter,
         }),
 
+        ClientsModule.registerAsync({
+            isGlobal: true,
+            clients: [
+                {
+                    inject: [ConfigService],
+                    name: 'RESERVATION_SERVICE',
+                    useFactory: (configService: ConfigService) => ({
+                        transport: Transport.RMQ,
+                        options: {
+                            urls: [configService.get<string>('RABBITMQ_URL')],
+                            queue: 'reservation_queue',
+                            queueOptions: {
+                                durable: true,
+                            },
+                            prefetchCount: 1, // SUB에서 1개씩만 처리
+                        },
+                    }),
+                },
+            ],
+        }),
+
         ShowModule,
         ReservationModule,
         WorkerModule,
     ],
-    controllers: [AppController],
-    providers: [AppService],
+    controllers: [],
+    providers: [],
 })
 export class AppModule {}

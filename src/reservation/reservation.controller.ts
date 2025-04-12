@@ -1,33 +1,54 @@
 import { Controller, Post, Body } from '@nestjs/common';
-import { ReservationService } from './reservation.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
+import { ReservationOptimisticService } from './service/reservation.optimistic.service';
+import { ReservationOverbookService } from './service/reservation.overbook.service';
+import { ReservationPessimisticService } from './service/reservation.pessimistic.service';
+import { ReservationRedisService } from './service/reservation.redis.service';
+import { ReservationBullmqService } from './service/reservation.bullmq.service';
+import { ReservationRabbitmqService } from './service/reservation.rabbitmq.service';
 
 @Controller('reservation')
 export class ReservationController {
-    constructor(private readonly reservationService: ReservationService) {}
+    constructor(
+        private readonly reservationOverbookService: ReservationOverbookService,
+        private readonly reservationPessimisticService: ReservationPessimisticService,
+        private readonly reservationOptimisticService: ReservationOptimisticService,
+        private readonly reservationBullmqService: ReservationBullmqService,
+        private readonly reservationRedisService: ReservationRedisService,
+        private readonly reservationRabbitmqService: ReservationRabbitmqService,
+    ) {}
 
     @Post('/overbook')
     overbook(@Body() createReservationDto: CreateReservationDto) {
-        return this.reservationService.overbook(createReservationDto);
+        return this.reservationOverbookService.execute(createReservationDto);
     }
 
     @Post('/pessimistic')
     pessimistic(@Body() createReservationDto: CreateReservationDto) {
-        return this.reservationService.pessimistic(createReservationDto);
+        return this.reservationPessimisticService.execute(createReservationDto);
     }
 
     @Post('/optimistic')
     optimistic(@Body() createReservationDto: CreateReservationDto) {
-        return this.reservationService.optimistic(createReservationDto);
+        return this.reservationOptimisticService.execute(createReservationDto);
     }
 
-    @Post('/queue')
-    async queue(@Body() createReservationDto: CreateReservationDto) {
-        return await this.reservationService.queue(createReservationDto);
+    @Post('/bullmq')
+    async bullmq(@Body() createReservationDto: CreateReservationDto) {
+        return await this.reservationBullmqService.execute(
+            createReservationDto,
+        );
     }
 
-    @Post('/queue/drain')
-    drain() {
-        return this.reservationService.drain();
+    @Post('/redis')
+    async redis(@Body() createReservationDto: CreateReservationDto) {
+        return await this.reservationRedisService.execute(createReservationDto);
+    }
+
+    @Post('/rabbitmq')
+    async rabbitmq(@Body() createReservationDto: CreateReservationDto) {
+        return await this.reservationRabbitmqService.execute(
+            createReservationDto,
+        );
     }
 }
