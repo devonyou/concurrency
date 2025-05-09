@@ -12,11 +12,23 @@ export class ReservationRabbitmqService {
     execute(createReservationDto: CreateReservationDto) {
         const { year, month, date, userId } = createReservationDto;
         const userIdWithTime = `${userId}-${format(new Date(), 'yyyy-MM-dd HH:mm:ss.SSS ')}`;
-        return this.rmqClient.emit('reservation', {
+        const stream = this.rmqClient.send('reservation', {
             year,
             month,
             date,
             userId: userIdWithTime,
         });
+        stream.subscribe({
+            complete: () => {
+                console.log('complete');
+            },
+            error: err => {
+                console.log(err);
+            },
+            next: result => {
+                console.log(result);
+            },
+        });
+        return stream;
     }
 }

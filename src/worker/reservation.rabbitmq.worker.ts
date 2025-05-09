@@ -27,7 +27,7 @@ export class ReservationRabbitmqWorker {
             const channel = context.getChannelRef();
             const originalMsg = context.getMessage();
             channel.ack(originalMsg);
-            return;
+            return { success: false, message: `'${userId}' 좌석 부족` };
         }
 
         const qr = this.dataSource.createQueryRunner();
@@ -50,9 +50,14 @@ export class ReservationRabbitmqWorker {
                 });
 
                 await qr.commitTransaction();
+
+                return { success: true, message: `'${userId}' 예약 완료` };
+            } else {
+                return { success: false, message: `'${userId}' 좌석 부족` };
             }
         } catch (err) {
             await qr.rollbackTransaction();
+            return { success: false, message: `'${userId}' 좌석 부족` };
 
             // NestJS가 자동으로 reject 처리
             // 메시지 처리 실패 시 nack 전송 (재시도)
@@ -61,7 +66,6 @@ export class ReservationRabbitmqWorker {
             //   channel.nack(originalMsg, false, true);
         } finally {
             await qr.release();
-
             await this.releaseLock(lockKey, lockValue);
 
             // 메시지 ack 전송

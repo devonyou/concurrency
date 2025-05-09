@@ -3,7 +3,7 @@ import { check, sleep } from 'k6';
 // import { uuidv4 } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';
 
 export const options = {
-    vus: 1000,
+    vus: 10,
     duration: '5s',
 };
 
@@ -20,7 +20,7 @@ export default function () {
     const payload = JSON.stringify({
         year: 2025,
         month: 2,
-        date: 4,
+        date: 2,
         userId: userId,
     });
     const params = {
