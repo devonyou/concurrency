@@ -4,7 +4,7 @@ import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+// import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 // import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
@@ -25,18 +25,18 @@ async function bootstrap() {
         document,
     );
 
-    app.connectMicroservice<MicroserviceOptions>({
-        transport: Transport.RMQ,
-        options: {
-            urls: [configService.get<string>('RABBITMQ_URL')],
-            queue: 'reservation_queue',
-            queueOptions: {
-                durable: true,
-            },
-            prefetchCount: 1,
-            noAck: false,
-        },
-    });
+    // app.connectMicroservice<MicroserviceOptions>({
+    //     transport: Transport.RMQ,
+    //     options: {
+    //         urls: [configService.get<string>('RABBITMQ_URL')],
+    //         queue: 'reservation-queue',
+    //         queueOptions: {
+    //             durable: true,
+    //         },
+    //         prefetchCount: 1,
+    //         noAck: false,
+    //     },
+    // });
 
     app.useGlobalInterceptors(
         new ClassSerializerInterceptor(app.get(Reflector)),
@@ -50,7 +50,7 @@ async function bootstrap() {
         }),
     );
 
-    await app.startAllMicroservices();
+    // await app.startAllMicroservices();
     await app.listen(configService.get<number>('HTTP_PORT'));
 }
 bootstrap();

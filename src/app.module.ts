@@ -5,10 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ShowEntity } from './show/entities/show.entity';
 import { ReservationModule } from './reservation/reservation.module';
 import { ReservationEntity } from './reservation/entities/reservation.entity';
-import { BullModule } from '@nestjs/bullmq';
-import { BullBoardModule } from '@bull-board/nestjs';
-import { ExpressAdapter } from '@bull-board/express';
-import { WorkerModule } from './worker/worker.module';
+// import { BullModule } from '@nestjs/bullmq';
+// import { BullBoardModule } from '@bull-board/nestjs';
+// import { ExpressAdapter } from '@bull-board/express';
+// import { WorkerModule } from './worker/worker.module';
 import { RedisModule } from '@liaoliaots/nestjs-redis';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
@@ -41,20 +41,20 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
             inject: [ConfigService],
         }),
 
-        BullModule.forRootAsync({
-            useFactory: (configService: ConfigService) => ({
-                connection: {
-                    host: configService.get<string>('REDIS_HOST'),
-                    port: +configService.get<number>('REDIS_PORT'),
-                },
-            }),
-            inject: [ConfigService],
-        }),
+        // BullModule.forRootAsync({
+        //     useFactory: (configService: ConfigService) => ({
+        //         connection: {
+        //             host: configService.get<string>('REDIS_HOST'),
+        //             port: +configService.get<number>('REDIS_PORT'),
+        //         },
+        //     }),
+        //     inject: [ConfigService],
+        // }),
 
-        BullBoardModule.forRoot({
-            route: '/queues',
-            adapter: ExpressAdapter,
-        }),
+        // BullBoardModule.forRoot({
+        //     route: '/queues',
+        //     adapter: ExpressAdapter,
+        // }),
 
         ClientsModule.registerAsync({
             isGlobal: true,
@@ -66,11 +66,11 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
                         transport: Transport.RMQ,
                         options: {
                             urls: [configService.get<string>('RABBITMQ_URL')],
-                            queue: 'reservation_queue',
+                            queue: 'reservation-queue',
                             queueOptions: {
                                 durable: true,
                             },
-                            prefetchCount: 1, // SUB에서 1개씩만 처리
+                            prefetchCount: 1,
                         },
                     }),
                 },
@@ -79,7 +79,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 
         ShowModule,
         ReservationModule,
-        WorkerModule,
+        // WorkerModule,
     ],
     controllers: [],
     providers: [],

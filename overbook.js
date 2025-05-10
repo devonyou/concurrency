@@ -3,8 +3,8 @@ import { check, sleep } from 'k6';
 // import { uuidv4 } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';
 
 export const options = {
-    vus: 10,
-    duration: '5s',
+    vus: 1000,
+    duration: '10s',
 };
 
 export default function () {
@@ -20,9 +20,10 @@ export default function () {
     const payload = JSON.stringify({
         year: 2025,
         month: 2,
-        date: 2,
+        date: 6,
         userId: userId,
     });
+
     const params = {
         headers: { 'Content-Type': 'application/json' },
     };

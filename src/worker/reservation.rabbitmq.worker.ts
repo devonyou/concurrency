@@ -1,14 +1,15 @@
 import { RedisService } from '@liaoliaots/nestjs-redis';
 import { Injectable } from '@nestjs/common';
 import { RmqContext } from '@nestjs/microservices';
-import Redis from 'ioredis';
 import { ReservationEntity } from 'src/reservation/entities/reservation.entity';
 import { ShowEntity } from 'src/show/entities/show.entity';
 import { DataSource } from 'typeorm';
+import Redis from 'ioredis';
 
 @Injectable()
 export class ReservationRabbitmqWorker {
     private redis: Redis;
+
     constructor(
         private readonly dataSource: DataSource,
         private readonly redisService: RedisService,
@@ -20,14 +21,14 @@ export class ReservationRabbitmqWorker {
         const { year, month, date, userId } = data;
 
         const lockKey = `lock:show:${year}-${month}-${date}`;
-        const lockValue = `${userId}-${Date.now()}`;
+        const lockValue = userId;
 
         const acquired = await this.acquireLock(lockKey, lockValue, 5);
         if (!acquired) {
             const channel = context.getChannelRef();
             const originalMsg = context.getMessage();
             channel.ack(originalMsg);
-            return { success: false, message: `'${userId}' 좌석 부족` };
+            return { success: false, userId };
         }
 
         const qr = this.dataSource.createQueryRunner();
@@ -51,15 +52,14 @@ export class ReservationRabbitmqWorker {
 
                 await qr.commitTransaction();
 
-                return { success: true, message: `'${userId}' 예약 완료` };
+                return { success: true, userId };
             } else {
-                return { success: false, message: `'${userId}' 좌석 부족` };
+                return { success: false, userId };
             }
         } catch (err) {
             await qr.rollbackTransaction();
-            return { success: false, message: `'${userId}' 좌석 부족` };
+            return { success: false, userId };
 
-            // NestJS가 자동으로 reject 처리
             // 메시지 처리 실패 시 nack 전송 (재시도)
             //   const channel = context.getChannelRef();
             //   const originalMsg = context.getMessage();

@@ -4,7 +4,7 @@ import { ReservationOptimisticService } from './service/reservation.optimistic.s
 import { ReservationOverbookService } from './service/reservation.overbook.service';
 import { ReservationPessimisticService } from './service/reservation.pessimistic.service';
 import { ReservationRedisService } from './service/reservation.redis.service';
-import { ReservationBullmqService } from './service/reservation.bullmq.service';
+// import { ReservationBullmqService } from './service/reservation.bullmq.service';
 import { ReservationRabbitmqService } from './service/reservation.rabbitmq.service';
 
 @Controller('reservation')
@@ -13,7 +13,7 @@ export class ReservationController {
         private readonly reservationOverbookService: ReservationOverbookService,
         private readonly reservationPessimisticService: ReservationPessimisticService,
         private readonly reservationOptimisticService: ReservationOptimisticService,
-        private readonly reservationBullmqService: ReservationBullmqService,
+        // private readonly reservationBullmqService: ReservationBullmqService,
         private readonly reservationRedisService: ReservationRedisService,
         private readonly reservationRabbitmqService: ReservationRabbitmqService,
     ) {}
@@ -33,12 +33,12 @@ export class ReservationController {
         return this.reservationOptimisticService.execute(createReservationDto);
     }
 
-    @Post('/bullmq')
-    async bullmq(@Body() createReservationDto: CreateReservationDto) {
-        return await this.reservationBullmqService.execute(
-            createReservationDto,
-        );
-    }
+    // @Post('/bullmq')
+    // async bullmq(@Body() createReservationDto: CreateReservationDto) {
+    //     return await this.reservationBullmqService.execute(
+    //         createReservationDto,
+    //     );
+    // }
 
     @Post('/redis')
     async redis(@Body() createReservationDto: CreateReservationDto) {
@@ -46,9 +46,11 @@ export class ReservationController {
     }
 
     @Post('/rabbitmq')
-    async rabbitmq(@Body() createReservationDto: CreateReservationDto) {
-        return await this.reservationRabbitmqService.execute(
-            createReservationDto,
-        );
+    rabbitmq(@Body() createReservationDto: CreateReservationDto) {
+        const stream =
+            this.reservationRabbitmqService.execute(createReservationDto);
+        stream.subscribe(result => {
+            if (result.success) console.log(result.userId);
+        });
     }
 }
